@@ -24,15 +24,15 @@ def nombre(episodes_tries,i):
     return len(set(nbr))
 
 def notes(episodes_tries):
-    tab_notes = pd.read_csv('data\\title.ratings.tsv', sep='\t')
+    tab_notes = pd.read_csv('Desktop/title.ratings.tsv', sep='\t')
     notes=[[] for _ in range(nombre(episodes_tries,1))]
     for tconst_ep in episodes_tries :
         saison = episodes_tries[tconst_ep][1]
         numero = episodes_tries[tconst_ep][0]
-        index_note = tab_notes[tab_notes['tconst'] == tconst_ep].index[0]
-        print(index_note)
-        print(tab_notes['averageRating'].loc[index_note])
-        note = tab_notes['averageRating'].loc[index_note]
+        index_note = tab_notes[tab_notes['xtconst'] == tconst_ep].index
+        if index_note== ([],'int64') :
+            note= 'Na'
+        else: note =tab_notes['averageRating'].loc[index_note]
         notes[saison-1].append(note)
     return notes
 
