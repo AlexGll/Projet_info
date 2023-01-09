@@ -19,17 +19,18 @@ def trouver_titre(titre) :
     serie = tmp[tmp['titleType'] == 'tvSeries'].drop(['isAdult', 'endYear', 'runtimeMinutes', 'genres'], axis=1)
 #avoir le ou LES index correspondant au titre. Il faudra donc faire une verrification que c'est bien celui demandé par l'utilisateur.
     index = serie[serie['primaryTitle'] == titre]
-    annees_serie = index['startYear'].values.tolist()
+    annees_serie = index['startYear'].values.tolist() #On récupère seulement la première année de diffusion des série ayant le bon nom. Le .value permet d'extraire les données sous for de ndarray de Numpy puis le .tolist permet de le convertir en liste.
     tconst_serie = index['tconst'].values.tolist()
 #Il faut gérer le cas où il existe plusieurs séries avec le même nom. Nous avons décidé d'utiliser la date de leur première diffusion comme élément distinguant (la probablité pour que deux séries du même nom sortent la même année étant très faible)
     if len(tconst_serie) > 1: 
         print('Plusieurs séries portent ce nom, voici l\'année de leur première diffusion respective : ')
         for an in annees_serie :
             print(an, end='  ',)
-        date = input("\nQuelle est la date du début de votre série?\n")
-        for i in range(len(annees_serie)) :
-            if annees_serie[i] == date : 
-                return tconst_serie[i]
+        while not(date in annees_serie) :
+            date = input("\nQuelle est la date du début de votre série?\n")
+            for i in range(len(annees_serie)) :
+                if annees_serie[i] == date : 
+                    return tconst_serie[i]
 #Il faut aussi gérer le cas où la série n'est pas trouvée dans la liste fournie par IMDB
     elif len(tconst_serie) == 0 : 
         print("Nous sommes désolé mais cette série n'est pas dans notre base de donnée, veuillez réessayer :")
@@ -46,16 +47,15 @@ def trouver_episodes(tconst_serie):
             #Cette fonction renvoie un dictionnaire ayant pour clé le tconst d'un épisode et comme valeur une liste [numéro d'épisode, numéro de la saison], et ce pour tous les épisodes d'une série
 def trier_episodes(episodes):
     episodes_tries = {}
-    pilote = [False,[]]
+    pilote = False#pour traiter le cas où il y a des épisodes pilote, ie indexé par 0. On récupère à la fois l'information de la présence d'épisodes pilote dans la série et les saisons où c'est le cas
     for ep in episodes['tconst'] :
         index_ep = episodes[episodes['tconst'] == ep].index[0]
         episodes_tries[ep] = [int(episodes['episodeNumber'][index_ep]),int(episodes['seasonNumber'][index_ep])]
         if int(episodes['episodeNumber'][index_ep]) == 0 :
-            pilote[1].append(int(episodes['seasonNumber'][index_ep]))
-            pilote[0] = True
+            pilote = True
     return episodes_tries,pilote
 
-            #Cette fonction calcule le nombre maximale d'épisodes, pour toutes les saisons, afin de connaitre la dimension du tableau affichant les résultats
+            #Cette fonction calcule le nombre d'éléments différents dans une liste. Pour nous, le nombre maximale d'épisodes, pour toutes les saisons, afin de connaitre la dimension du tableau affichant les résultats
 def nombre(episodes_tries,i):
     nbr = []
     for ep in episodes_tries :
@@ -67,24 +67,29 @@ def notes(episodes_tries):
     pilote = episodes_tries[1]
     episodes_tries = episodes_tries[0]
     tab_notes = pd.read_csv('data\\title.ratings.tsv', sep='\t')
-    notes=[[] for _ in range(nombre(episodes_tries,1))]
+    dimension_episodes = nombre(episodes_tries,0)
+    dimension_saison = nombre(episodes_tries,1)
+    notes=[['' for _ in range(dimension_episodes)] for _ in range(dimension_saison)]
+    if pilote :
+            for l in notes :
+                l.append('')
     for tconst_ep in episodes_tries :
         saison = episodes_tries[tconst_ep][1]
         numero = episodes_tries[tconst_ep][0]
-        if pilote[0] and numero == 1 and not(saison in pilote[1]):
-            notes[saison-1].insert(0,'')
         index_note = tab_notes[tab_notes['tconst'] == tconst_ep].index
         if str(index_note) == "Int64Index([], dtype='int64')" :
             note = 'Na'
         else:
             note = float(tab_notes['averageRating'].loc[index_note].values)
-        notes[saison-1].append(note)
+        if pilote :
+            notes[saison-1][numero] = note
+        else : notes[saison-1][numero-1] = note
     return notes,pilote
 
             #Cette fonction écrit le code HTML à partir d'un code déjà existant en ajoutant les lignes liées aux notes précédemment déterminées
 def ecrire_html(code_vide,note,nom_fichier):
     notes = note[0]
-    pilote = note[1][0]
+    pilote = note[1]
     with open(nom_fichier +".html", 'w') as f:
         f.writelines(code_vide[:14])
         for j in range(len(notes)) :
