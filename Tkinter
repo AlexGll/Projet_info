@@ -1,0 +1,30 @@
+from tkinter import *
+import webbrowser
+#Initialisation de la page
+Page1 = Tk ()
+Page1.title("Notes IMDb Séries")
+Page1.geometry("1080x720")
+Page1.iconbitmap()
+Page1.config(background="black")
+
+def get_input():
+   titre=titre_input.get()
+   return(titre)
+
+#Cadre d'affichage
+Cadre= Frame (Page1, bg='black')
+Cadre.pack(expand=YES)
+#Titre Principal
+Label_Titre=Label(Cadre, text='Quel est le titre de la série ?', font=('Arial',40), bg='Black', fg='yellow')
+Label_Titre.grid(row=0, column=0)
+
+#Bouton de lancement
+Bouton_lancement = Button(Cadre, text='Chercher',font=('arial',20), bg='Yellow', fg='Black', command=get_input)
+Bouton_lancement.grid(row=1, column=1)
+
+#Boutton de saisie
+titre_input= Entry(Cadre,font=('arial',20), bg='Yellow', fg='Black')
+titre_input.grid(row=1, column=0)
+
+Page1.mainloop()
+
