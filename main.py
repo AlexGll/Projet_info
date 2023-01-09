@@ -26,6 +26,7 @@ def trouver_titre(titre) :
         print('Plusieurs séries portent ce nom, voici l\'année de leur première diffusion respective : ')
         for an in annees_serie :
             print(an, end='  ',)
+        date = ""
         while not(date in annees_serie) :
             date = input("\nQuelle est la date du début de votre série?\n")
             for i in range(len(annees_serie)) :
