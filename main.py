@@ -63,7 +63,9 @@ def trouver_titre(titre) :
         for k in annees_serie :
             annees_str += str(k)+', '
         annees_str = annees_str[:-2]
-        date = demander('Plusieurs séries portent ce nom.\nVoici l\'année de leur première diffusion respective :\n'+annees_str)
+        date = 0
+        while not(date in annees_serie):
+            date = demander('Plusieurs séries portent ce nom.\nVoici l\'année de leur première diffusion respective :\n'+annees_str)
         for i in range(len(annees_serie)) :
             if annees_serie[i] == date : 
                 return tconst_serie[i]
@@ -82,9 +84,11 @@ def trouver_episodes(tconst_serie):
             #Cette fonction renvoie un dictionnaire ayant pour clé le tconst d'un épisode et comme valeur une liste [numéro d'épisode, numéro de la saison], et ce pour tous les épisodes d'une série
 def trier_episodes(episodes):
     episodes_tries = {}
-    pilote = False#pour traiter le cas où il y a des épisodes pilote, ie indexé par 0. On récupère à la fois l'information de la présence d'épisodes pilote dans la série et les saisons où c'est le cas
+    pilote = False #pour traiter le cas où il y a des épisodes pilote, ie indexé par 0. On récupère à la fois l'information de la présence d'épisodes pilote dans la série et les saisons où c'est le cas
     for ep in episodes['tconst'] :
         index_ep = episodes[episodes['tconst'] == ep].index[0]
+        if episodes['episodeNumber'][index_ep] == '\\N' or episodes['seasonNumber'][index_ep]== '\\N' :
+            continue
         episodes_tries[ep] = [int(episodes['episodeNumber'][index_ep]),int(episodes['seasonNumber'][index_ep])]
         if int(episodes['episodeNumber'][index_ep]) == 0 :
             pilote = True
@@ -119,15 +123,20 @@ def notes(episodes_tries):
     return notes,pilote
 
             #Cette fonction écrit le code HTML à partir d'un code déjà existant en ajoutant les lignes liées aux notes précédemment déterminées
-def ecrire_html(code_vide,note,nom_fichier):
-    notes = note[0]
-    pilote = note[1]
+def ecrire_html(code_vide,note_pilote,nom_fichier):
+    notes = note_pilote[0]
+    print(notes)
+    pilote = note_pilote[1]
     with open(nom_fichier +".html", 'w') as f:
         f.writelines(code_vide[:14])
         for j in range(len(notes)) :
             f.write( '            <th>'+str(j+1)+'</th>\n')
         f.writelines(code_vide[15:17])
-        taille_max = max(len(notes[i]) for i in range(len(notes)))
+        taille_max = 0 
+        for l in notes :
+            long = len(l)
+            if long > taille_max : 
+                taille_max = long
         for k in range(taille_max) :
             f.write('        <tr>\n')
             debut=True
