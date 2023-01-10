@@ -1,16 +1,52 @@
+from tkinter import *
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning) #Pandas renvoie une erreur préventive pour ses prochaines versions, qui ne modifie donc pas le résultat obtenu.
 import pandas as pd
 import numpy as np 
 import webbrowser 
 
-def main():
-    titre = input("Quel est le titre de la série dont vous souhaitez les notes IMDB ?\n") 
+
+def main(question):
+    titre = demander(question)
     page = "affichage_notes_"+str(titre)
 #Le résultat final état affiché sur une page HTML, nous avons fait en sorte de coder ce fichier .html depuis notre programme Python. 
     code_vide = ['<!DOCTYPE html>\n', '<html lang="fr">\n', '<head>\n', '    <meta charset="UTF-8">\n', '    <meta name="viewport" content="width=device-width, initial-scale=1" />\n', '    <title>Notes IMDB \t Karl LIEBEL et Alexandre GILLES</title>\n', '    <link rel="stylesheet" href="rendu.css">\n', '</head>\n', '<body> \n', '\n', '<table class="table-style">\n', '    <thead>\n', '        <tr>\n', '            <th>'+titre+'</th>\n', '        </tr>\n', '    </thead>\n', '    <tbody>\n', '        <tr>\n', '            <td>Note</td>\n', '        </tr>\n', '        \n', '        </tr>\n', '    </tbody>\n', '</table></body></html>']
     ecrire_html(code_vide,notes(trier_episodes(trouver_episodes(trouver_titre(titre)))),page)
     webbrowser.open_new_tab(page+".html") #permet d'ouvrir le fichier HTML créé dans  
+
+
+            #Cette fonction ouvre une page tkinter en posant une question en argument et renvoyant la valeur donnée.
+def demander(question):
+    global reponse
+    reponse=''
+    #Initialisation de la page
+    page1 = Tk ()
+    page1.title("Notes IMDb Séries")
+    page1.geometry("1080x720")
+    page1.iconbitmap()
+    page1.config(background="#f5c518")
+    page1.state('zoomed')
+
+    def get_input():
+        global reponse
+        reponse= reponse_input.get()
+        return(reponse)
+
+    #Cadre d'affichage
+    cadre= Frame (page1, bg='#f5c518')
+    cadre.pack(expand=YES)
+    #Titre Principal
+    label_Titre=Label(cadre, text=question, font=('Bauhaus 93',40), bg='#f5c518', fg='black')
+    label_Titre.grid(row=0, column=0)
+    #Bouton de lancement
+    bouton_lancement = Button(cadre, text='Valider',font=('Bauhaus 93',20), bg='black', fg='#f5c518', command=lambda:[f for f in [get_input(),page1.destroy()]])
+    bouton_lancement.grid(row=1, column=1)
+    #Boutton de saisie
+    reponse_input= Entry(cadre,font=('Bauhaus 93',20), bg='black', fg='#f5c518')
+    reponse_input.grid(row=1, column=0)
+
+    page1.mainloop()
+    return reponse
 
             #Cette fonction détermine le tconst, identifiant unique utilisé par IMDB, de la série à partir de son titre
 def trouver_titre(titre) :
@@ -23,19 +59,17 @@ def trouver_titre(titre) :
     tconst_serie = index['tconst'].values.tolist()
 #Il faut gérer le cas où il existe plusieurs séries avec le même nom. Nous avons décidé d'utiliser la date de leur première diffusion comme élément distinguant (la probablité pour que deux séries du même nom sortent la même année étant très faible)
     if len(tconst_serie) > 1: 
-        print('Plusieurs séries portent ce nom, voici l\'année de leur première diffusion respective : ')
-        for an in annees_serie :
-            print(an, end='  ',)
-        date = ""
-        while not(date in annees_serie) :
-            date = input("\nQuelle est la date du début de votre série?\n")
-            for i in range(len(annees_serie)) :
-                if annees_serie[i] == date : 
-                    return tconst_serie[i]
+        annees_str =''
+        for k in annees_serie :
+            annees_str += str(k)+', '
+        annees_str = annees_str[:-2]
+        date = demander('Plusieurs séries portent ce nom.\nVoici l\'année de leur première diffusion respective :\n'+annees_str)
+        for i in range(len(annees_serie)) :
+            if annees_serie[i] == date : 
+                return tconst_serie[i]
 #Il faut aussi gérer le cas où la série n'est pas trouvée dans la liste fournie par IMDB
     elif len(tconst_serie) == 0 : 
-        print("Nous sommes désolé mais cette série n'est pas dans notre base de donnée, veuillez réessayer :")
-        main()
+        main("Nous sommes désolé mais cette série\nn'est pas dans notre base de donnée, veuillez réessayer :")
     else :
         return tconst_serie[0]
 
@@ -71,9 +105,6 @@ def notes(episodes_tries):
     dimension_episodes = nombre(episodes_tries,0)
     dimension_saison = nombre(episodes_tries,1)
     notes=[['' for _ in range(dimension_episodes)] for _ in range(dimension_saison)]
-    if pilote :
-            for l in notes :
-                l.append('')
     for tconst_ep in episodes_tries :
         saison = episodes_tries[tconst_ep][1]
         numero = episodes_tries[tconst_ep][0]
@@ -114,4 +145,4 @@ def ecrire_html(code_vide,note,nom_fichier):
             f.write('        </tr>\n')
         f.writelines(code_vide[22:])
 
-main()
+main('Quel est le titre\nde la série dont vous souhaitez les notes IMDB ?\n(merci de mettre le titre en anglais avec les majuscules)')
